@@ -1,3 +1,331 @@
 <!DOCTYPE html>
-<!-- Заменяется полным HTML-кодом с canvas (уже исправленным) -->
-<!-- Предполагаем, что HTML уже корректен и сохранён из canvas в предыдущем шаге -->
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Калькулятор автолизинга</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding: 20px;
+      margin: 0;
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    .results {
+      margin-top: 20px;
+      background-color: #e9ffe9;
+      padding: 15px;
+      border-radius: 4px;
+    
+    @media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+  .calculator-container {
+    padding: 15px;
+    margin: 0 10px;
+  }
+  th, td {
+    font-size: 12px;
+    padding: 6px;
+    word-break: break-word;
+  
+  h2 {
+    font-size: 20px;
+    text-align: center;
+  }
+  table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+  
+}
+  .calculator-container {
+    padding: 15px;
+    margin: 0 10px;
+  }
+  th, td {
+    font-size: 12px;
+    padding: 6px;
+    word-break: break-word;
+  }
+  button {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+  
+  table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+  }
+}
+  
+  
+  
+  
+  
+}
+  .calculator-container {
+    padding: 15px;
+    margin: 0 10px;
+  }
+  th, td {
+    font-size: 12px;
+    padding: 6px;
+    word-break: break-word;
+  }
+  
+  button {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+  }
+  h2 {
+    font-size: 20px;
+    text-align: center;
+  }
+  table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+  }
+}
+  .calculator-container {
+    padding: 15px;
+    margin: 0 10px;
+  }
+  th, td {
+    font-size: 12px;
+    padding: 6px;
+    word-break: break-word;
+  }
+  
+  button {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+  }
+  h2 {
+    font-size: 20px;
+    text-align: center;
+  }
+  table {
+    display: block;
+    overflow-x: auto;
+    width: 100%;
+  }
+}
+      
+      
+      label, input, select {
+        font-size: 14px;
+      }
+      
+      
+    }
+    label, input, select {
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="calculator-container">
+  <div class="form-group">
+    <label for="language-switch">Выберите язык:</label>
+    <select id="language-switch" onchange="switchLanguage(this.value)">
+      <option value="ru" selected>Русский</option>
+      <option value="pl">Polski</option>
+      <option value="en">English</option>
+      <option value="ua">Українська</option>
+    </select>
+  </div>
+  <h2>Калькулятор автолизинга</h2>
+  <div class="form-group">
+    <label for="car-price">Стоимость автомобиля (PLN):</label>
+    <input type="number" id="car-price" value="154390">
+  </div>
+  <div class="form-group">
+    <label for="monthly-rate">Месячная ставка лизинга (%):</label>
+    <input type="number" id="monthly-rate" value="1.6358" step="0.0001">
+  </div>
+  <div class="form-group">
+    <label for="duration">Срок лизинга (в месяцах):</label>
+    <input type="number" id="duration" value="60">
+  </div>
+  <div class="form-group">
+    <label for="residual-value">Остаточная стоимость (%):</label>
+    <input type="number" id="residual-value" value="30">
+  </div>
+  <div class="form-group">
+    <label for="inflation">Годовая инфляция (%):</label>
+    <input type="number" id="inflation" value="5" step="0.1">
+  </div>
+  <div class="form-group">
+    <label for="tax-deduction">Можно ли учесть как расходы фирмы?</label>
+    <select id="tax-deduction">
+      <option value="none">Нет</option>
+      <option value="full">Да, полностью</option>
+      <option value="limit">Да, до лимита (150 000 zł)</option>
+    </select>
+  </div>
+  <button onclick="calculateLeasing()">Рассчитать лизинг</button>
+  <div class="results" id="leasing-results" style="display: none; opacity: 0; transition: opacity 0.5s ease; max-height: 0; overflow: hidden;"></div>
+</div>
+
+<script>
+// Автоопределение языка из URL
+(function detectLangFromURL() {
+  const pathLang = window.location.pathname.split('/')[1];
+  const map = { ru: 'ru', pl: 'pl', en: 'en', uk: 'ua' };
+  const detectedLang = map[pathLang] || 'ru';
+  document.getElementById('language-switch').value = detectedLang;
+  switchLanguage(detectedLang);
+})();
+function calculateLeasing() {
+  const price = parseFloat(document.getElementById('car-price').value);
+  const rate = parseFloat(document.getElementById('monthly-rate').value) / 100;
+  const months = parseInt(document.getElementById('duration').value);
+  const residualPercent = parseFloat(document.getElementById('residual-value').value) / 100;
+  const inflation = parseFloat(document.getElementById('inflation').value) / 100;
+
+  const monthlyPayment = price * rate;
+  const residualValue = price * residualPercent;
+
+  let totalInflated = 0;
+  let rows = "";
+
+  for (let i = 1; i <= months; i++) {
+    const realPayment = monthlyPayment * Math.pow(1 + inflation, i / 12);
+    totalInflated += realPayment;
+    rows += `<tr><td>${i}</td><td>${realPayment.toFixed(2)} PLN</td></tr>`;
+  }
+
+  const totalCost = totalInflated + residualValue;
+  const inflationFactor = Math.pow(1 + inflation, months / 12);
+  const realCostToday = totalCost / inflationFactor;
+  const overpayment = totalCost - price;
+
+  let taxSavings = 0;
+  const deductionMode = document.getElementById('tax-deduction').value;
+  const taxRate = 0.19;
+  if (deductionMode === 'full') {
+    taxSavings = totalCost * taxRate;
+  } else if (deductionMode === 'limit') {
+    const allowedCost = Math.min(price, 150000);
+    taxSavings = (allowedCost + residualValue) * taxRate;
+  }
+
+  const resultsDiv = document.getElementById('leasing-results');
+  resultsDiv.style.display = 'block';
+  resultsDiv.style.maxHeight = '10000px';
+  setTimeout(() => {
+    resultsDiv.style.opacity = 1;
+    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 10);
+  resultsDiv.innerHTML = `
+    <p><strong>Базовый ежемесячный платёж:</strong> ${monthlyPayment.toFixed(2)} PLN</p>
+    <p><strong>Остаточная стоимость:</strong> ${residualValue.toFixed(2)} PLN</p>
+    <p><strong>Сумма платежей с учётом инфляции:</strong> ${totalInflated.toFixed(2)} PLN</p>
+    <p><strong>Общая сумма лизинга:</strong> ${totalCost.toFixed(2)} PLN</p>
+    <h3>График платежей:</h3>
+    <table>
+      <thead><tr><th>Месяц</th><th>Платёж (с инфляцией)</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p><strong>Реальная стоимость сегодня (с учётом инфляции):</strong> ${realCostToday.toFixed(2)} PLN</p>
+    <p><strong>Переплата по сравнению с ценой автомобиля:</strong> ${overpayment.toFixed(2)} PLN</p>
+    <p><strong>Ожидаемая налоговая выгода (19% PIT/CIT):</strong> ${taxSavings.toFixed(2)} PLN</p>
+    <p><strong>Финальная сумма после вычета налогов:</strong> ${(totalCost - taxSavings).toFixed(2)} PLN</p>
+  `;
+}
+function switchLanguage(lang) {
+  const translations = {
+    ru: {
+      title: "Калькулятор автолизинга",
+      labels: [
+        "Стоимость автомобиля (PLN):",
+        "Месячная ставка лизинга (%):",
+        "Срок лизинга (в месяцах):",
+        "Остаточная стоимость (%):",
+        "Годовая инфляция (%):",
+        "Можно ли учесть как расходы фирмы?",
+        "Нет",
+        "Да, полностью",
+        "Да, до лимита (150 000 zł)",
+        "Рассчитать лизинг"
+      ]
+    },
+    pl: {
+      title: "Kalkulator leasingu samochodowego",
+      labels: [
+        "Cena samochodu (PLN):",
+        "Miesięczna stopa leasingu (%):",
+        "Czas trwania leasingu (w miesiącach):",
+        "Wartość końcowa (%):",
+        "Inflacja roczna (%):",
+        "Czy można uwzględnić jako koszt firmowy?",
+        "Nie",
+        "Tak, w całości",
+        "Tak, do limitu (150 000 zł)",
+        "Oblicz leasing"
+      ]
+    },
+    en: {
+      title: "Car Leasing Calculator",
+      labels: [
+        "Car price (PLN):",
+        "Monthly lease rate (%):",
+        "Lease duration (months):",
+        "Residual value (%):",
+        "Annual inflation (%):",
+        "Can it be considered a business expense?",
+        "No",
+        "Yes, fully",
+        "Yes, up to the limit (150,000 zł)",
+        "Calculate leasing"
+      ]
+    },
+    ua: {
+      title: "Калькулятор автолізингу",
+      labels: [
+        "Вартість автомобіля (PLN):",
+        "Місячна ставка лізингу (%):",
+        "Термін лізингу (в місяцях):",
+        "Залишкова вартість (%):",
+        "Річна інфляція (%):",
+        "Чи можна врахувати як витрату фірми?",
+        "Ні",
+        "Так, повністю",
+        "Так, до ліміту (150 000 zł)",
+        "Розрахувати лізинг"
+      ]
+    }
+  };
+
+  const t = translations[lang];
+  document.querySelector("h2").textContent = t.title;
+  const labels = document.querySelectorAll("label");
+  t.labels.slice(0, 6).forEach((txt, i) => labels[i].textContent = txt);
+  const options = document.querySelectorAll("#tax-deduction option");
+  options[0].textContent = t.labels[6];
+  options[1].textContent = t.labels[7];
+  options[2].textContent = t.labels[8];
+  document.querySelector("button").textContent = t.labels[9];
+}
+</script>
+</body>
+</html>
